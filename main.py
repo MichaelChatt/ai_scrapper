@@ -1,13 +1,15 @@
-import os
 import argparse
+import os
+
 from dotenv import load_dotenv
 from openai import OpenAI
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Chatbot")
-    parser.add_argument("user_prompt", type=str, help="User prompt")
+    parser = argparse.ArgumentParser(description="AI Code Assistant")
+    parser.add_argument("user_prompt", type=str, help="Prompt to send to the LLM")
     args = parser.parse_args()
+
 
     load_dotenv()
     api_key = os.environ.get("OPENROUTER_API_KEY")
@@ -18,19 +20,23 @@ def main() -> None:
         base_url="https://openrouter.ai/api/v1",
         api_key=api_key,
     )
-    response = client.chat.completions.create(
-        model="openrouter/free",
-        messages=[
-            {
-                "role": "user",
-                "content": [{"role": "user", "content": args.user_prompt}],}],
-    )
 
+    messages = [
+        {"role": "user", "content": args.user_prompt},
+    ]
+    generate_content(client, messages)
+
+
+    def generate_content(client: OpenAI, messages: list) -> None:
+        response = client.chat.completions.create(
+          model="openrouter/free",
+         messages=messages,
+        )
     if not response.usage:
-        raise RuntimeError("Failed API Request")
+        raise RuntimeError("API response appears to be malformed")
 
-    print(f"Prompt tokens: {response.usage.prompt_tokens}")
-    print(f"Response tokens: {response.usage.completion_tokens}")
+    print("Prompt tokens:", response.usage.prompt_tokens)
+    print("Response tokens:", response.usage.completion_tokens)
     print("Response:")
     print(response.choices[0].message.content)
 
